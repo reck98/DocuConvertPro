@@ -132,7 +132,7 @@ app.get('/api/engine-status', (req, res) => {
 });
 
 // 5. Generic Tool Dispatcher Endpoint for all 34 PDF Tools
-app.post('/api/tools/:action', upload.array('files', 20), async (req, res) => {
+app.post('/api/tools/:action', upload.array('files', 20), async (req, res, next) => {
   const action = req.params.action;
   let params = {};
   
@@ -184,7 +184,7 @@ app.post('/api/tools/:action', upload.array('files', 20), async (req, res) => {
     });
 
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       action,
       error: error.message || 'Failed to process PDF tool action'
@@ -195,7 +195,7 @@ app.post('/api/tools/:action', upload.array('files', 20), async (req, res) => {
 });
 
 // 6. Workflow Automation Endpoint
-app.post('/api/workflow/execute', upload.array('files', 20), async (req, res) => {
+app.post('/api/workflow/execute', upload.array('files', 20), async (req, res, next) => {
   const uploadedFiles = req.files || [];
   const inputPaths = uploadedFiles.map(f => f.path);
 
@@ -230,7 +230,7 @@ app.post('/api/workflow/execute', upload.array('files', 20), async (req, res) =>
       files: outputFiles
     });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    return res.status(500).json({ success: false, error: error.message });
   } finally {
     inputPaths.forEach(p => fs.unlink(p, () => {}));
   }
@@ -260,6 +260,17 @@ app.get('/api/preview/:filename', (req, res) => {
   } else {
     res.status(404).send('PDF file not found');
   }
+});
+
+// Global Express API Error Middleware (Ensures API errors return JSON instead of HTML <!DOCTYPE)
+app.use((err, req, res, next) => {
+  if (req.path.startsWith('/api/')) {
+    return res.status(500).json({
+      success: false,
+      error: err.message || 'API Server Error'
+    });
+  }
+  next(err);
 });
 
 // Serve production static assets with Caching & History API Fallback

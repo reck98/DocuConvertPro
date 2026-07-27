@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { X, Upload, Play, Download, Eye, Loader2, CheckCircle2, FileText, Sparkles } from 'lucide-react';
+import { X, Upload, Play, Download, Eye, Loader2, CheckCircle2, FileText, Sparkles, AlertCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export default function ToolRunnerModal({ tool, inline = false, onClose, onPreview }) {
   if (!tool) return null;
@@ -13,11 +14,15 @@ export default function ToolRunnerModal({ tool, inline = false, onClose, onPrevi
     return initial;
   });
   const [isProcessing, setIsProcessing] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [progressStatus, setProgressStatus] = useState('');
   const [result, setResult] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
       setFiles(Array.from(e.target.files));
+      setErrorMessage(null);
     }
   };
 
@@ -27,12 +32,28 @@ export default function ToolRunnerModal({ tool, inline = false, onClose, onPrevi
 
   const handleProcess = async () => {
     if (files.length === 0 && tool.id !== 'html_to_pdf') {
-      alert('Please upload file(s) to process!');
+      setErrorMessage('Please upload file(s) before running the tool.');
       return;
     }
 
     setIsProcessing(true);
+    setProgress(15);
+    setProgressStatus('Uploading document(s)...');
     setResult(null);
+    setErrorMessage(null);
+
+    // Simulate progress bar increments
+    const interval = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 85) {
+          clearInterval(interval);
+          return 88;
+        }
+        if (prev === 15) setProgressStatus(`Executing ${tool.title}...`);
+        if (prev === 50) setProgressStatus('Applying formatting & optimization...');
+        return prev + 12;
+      });
+    }, 300);
 
     const formData = new FormData();
     files.forEach(f => formData.append('files', f));
@@ -43,14 +64,29 @@ export default function ToolRunnerModal({ tool, inline = false, onClose, onPrevi
         method: 'POST',
         body: formData
       });
+
+      clearInterval(interval);
+      setProgress(95);
+      setProgressStatus('Finalizing output document...');
+
+      const contentType = res.headers.get('content-type') || '';
+
+      if (!res.ok || !contentType.includes('application/json')) {
+        const rawText = await res.text();
+        throw new Error(rawText.includes('500') ? 'Server error processing document. Please check file format.' : 'Invalid response from server.');
+      }
+
       const data = await res.json();
       if (data.success) {
+        setProgress(100);
+        setProgressStatus('Completed successfully!');
         setResult(data);
       } else {
-        alert('Tool error: ' + (data.error || 'Failed to process document'));
+        throw new Error(data.error || 'Failed to process document');
       }
     } catch (err) {
-      alert('Request error: ' + err.message);
+      clearInterval(interval);
+      setErrorMessage(err.message || 'Error processing request');
     } finally {
       setIsProcessing(false);
     }
@@ -130,16 +166,49 @@ export default function ToolRunnerModal({ tool, inline = false, onClose, onPrevi
         </div>
       )}
 
-      {/* Action Execution Button */}
-      <button
-        onClick={handleProcess}
-        disabled={isProcessing}
-        className="browse-btn"
-        style={{ width: '100%', justifyContent: 'center', padding: '14px', fontSize: '1rem' }}
-      >
-        {isProcessing ? <Loader2 size={18} className="animate-spin" /> : <Play size={18} />}
-        {isProcessing ? `Processing ${tool.title}...` : `Run ${tool.title}`}
-      </button>
+      {/* Progress Bar Container when processing */}
+      {isProcessing ? (
+        <div style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-glass)', borderRadius: 'var(--radius-md)', padding: '20px', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', fontSize: '0.88rem', fontWeight: '700', color: 'var(--text-main)' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Loader2 size={16} className="animate-spin" style={{ color: 'var(--c-dark-amaranth)' }} />
+              {progressStatus}
+            </span>
+            <span>{progress}%</span>
+          </div>
+
+          {/* Animated Fill Bar */}
+          <div style={{ width: '100%', height: '10px', background: 'var(--bg-input)', borderRadius: '10px', overflow: 'hidden' }}>
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${progress}%` }}
+              transition={{ duration: 0.3 }}
+              style={{
+                height: '100%',
+                background: 'linear-gradient(90deg, #8b2635 0%, #d3efbd 100%)',
+                borderRadius: '10px'
+              }}
+            />
+          </div>
+        </div>
+      ) : (
+        <button
+          onClick={handleProcess}
+          className="browse-btn"
+          style={{ width: '100%', justifyContent: 'center', padding: '14px', fontSize: '1rem' }}
+        >
+          <Play size={18} />
+          {`Run ${tool.title}`}
+        </button>
+      )}
+
+      {/* Error Banner */}
+      {errorMessage && (
+        <div style={{ marginTop: '20px', padding: '14px 18px', background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: 'var(--radius-md)', color: '#f87171', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.88rem' }}>
+          <AlertCircle size={20} flexShrink={0} />
+          <span>{errorMessage}</span>
+        </div>
+      )}
 
       {/* Output Results */}
       {result && (
@@ -195,7 +264,7 @@ export default function ToolRunnerModal({ tool, inline = false, onClose, onPrevi
         {/* Header */}
         <div className="modal-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ width: '40px', height: '40px', background: 'var(--c-dark-amaranth)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+            <div style={{ width: '42px', height: '42px', background: 'var(--c-dark-amaranth)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
               <FileText size={22} />
             </div>
             <div>
@@ -204,9 +273,28 @@ export default function ToolRunnerModal({ tool, inline = false, onClose, onPrevi
             </div>
           </div>
 
-          <button className="icon-btn" onClick={onClose}>
-            <X size={18} />
-          </button>
+          {/* Redesigned Premium Circular Close Button */}
+          <motion.button 
+            whileHover={{ scale: 1.1, rotate: 90 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={onClose}
+            style={{
+              width: '38px',
+              height: '38px',
+              borderRadius: '50%',
+              background: 'var(--bg-tertiary)',
+              border: '1px solid var(--border-glass)',
+              color: 'var(--text-main)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+            }}
+            title="Close modal"
+          >
+            <X size={20} />
+          </motion.button>
         </div>
 
         {mainContent}
