@@ -54,6 +54,7 @@ export default function App() {
     const handlePopState = () => {
       const slug = window.location.pathname.replace('/', '');
       setCurrentSlug(slug);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
@@ -95,9 +96,8 @@ export default function App() {
   const navigateToSlug = (slug) => {
     setCurrentSlug(slug);
     window.history.pushState(null, '', slug ? `/${slug}` : '/');
-    if (!slug) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    // Scroll immediately to the top where the file upload area & main tool container is located
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const currentLandingTool = TOOLS.find(t => t.slug === currentSlug);
