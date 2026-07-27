@@ -59,10 +59,10 @@ export default function App() {
 
       <StatsOverview files={statsFiles} />
 
-      {/* Category Tabs & Search Bar */}
+      {/* Touch-optimized Category Bar & Mobile Search */}
       <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-glass)', borderRadius: 'var(--radius-xl)', padding: '16px 20px', marginBottom: '32px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-          <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px', maxWidth: '100%' }}>
+          <div className="category-scroll-container">
             {CATEGORIES.map(cat => (
               <button
                 key={cat.id}
@@ -76,25 +76,25 @@ export default function App() {
             ))}
           </div>
 
-          <div style={{ position: 'relative', width: '280px' }}>
+          <div className="search-wrapper" style={{ position: 'relative', width: '280px' }}>
             <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-subtle)' }} />
             <input
               type="text"
-              placeholder="Search 27+ PDF tools..."
+              placeholder="Search 34+ PDF tools..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ width: '100%', background: '#111827', color: 'white', border: '1px solid var(--border-glass)', borderRadius: 'var(--radius-md)', padding: '8px 12px 8px 36px', fontSize: '0.85rem' }}
+              style={{ width: '100%', background: '#111827', color: 'white', border: '1px solid var(--border-glass)', borderRadius: 'var(--radius-md)', padding: '8px 12px 8px 36px', fontSize: '0.85rem', height: '44px' }}
             />
           </div>
         </div>
       </div>
 
-      {/* Workflow Builder Section if Workflow Category selected */}
+      {/* Workflow Builder Section */}
       {selectedCategory === 'workflow' && (
         <WorkflowBuilder onRunWorkflow={(results) => console.log(results)} />
       )}
 
-      {/* 27 Tools Grid */}
+      {/* 34 Tools Grid */}
       {selectedCategory !== 'workflow' && (
         <div style={{ marginBottom: '40px' }}>
           <div className="section-header">
@@ -103,17 +103,17 @@ export default function App() {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '18px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' }}>
             {filteredTools.map(tool => (
               <div
                 key={tool.id}
                 onClick={() => setActiveTool(tool)}
                 className="file-card"
-                style={{ cursor: 'pointer', flexDirection: 'column', alignItems: 'flex-start', padding: '22px', height: '100%', justifyContent: 'space-between' }}
+                style={{ cursor: 'pointer', flexDirection: 'column', alignItems: 'flex-start', padding: '20px', height: '100%', justifyContent: 'space-between' }}
               >
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                    <div style={{ width: '42px', height: '42px', borderRadius: '10px', background: 'rgba(99, 102, 241, 0.15)', color: '#818cf8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: '42px', height: '42px', borderRadius: '10px', background: 'rgba(99, 102, 241, 0.15)', color: '#818cf8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       {renderIcon(tool.icon, 22)}
                     </div>
                     <h3 style={{ fontSize: '1.05rem', fontWeight: '700', color: 'white' }}>{tool.title}</h3>

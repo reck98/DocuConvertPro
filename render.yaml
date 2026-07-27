@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: docuconvert-pdf-studio
+    env: docker
+    plan: free
+    region: singapore
+    branch: main
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
