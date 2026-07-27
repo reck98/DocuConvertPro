@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Upload, Play, Download, Eye, Loader2, CheckCircle2, FileText, Sparkles, AlertCircle } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function ToolRunnerModal({ tool, inline = false, onClose, onPreview }) {
   if (!tool) return null;
@@ -42,7 +42,6 @@ export default function ToolRunnerModal({ tool, inline = false, onClose, onPrevi
     setResult(null);
     setErrorMessage(null);
 
-    // Simulate progress bar increments
     const interval = setInterval(() => {
       setProgress(prev => {
         if (prev >= 85) {
@@ -90,6 +89,15 @@ export default function ToolRunnerModal({ tool, inline = false, onClose, onPrevi
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const getDownloadLabel = (filename) => {
+    if (!filename) return 'Download Result File';
+    if (filename.endsWith('.docx')) return 'Download Word Document (.docx)';
+    if (filename.endsWith('.pptx')) return 'Download Presentation (.pptx)';
+    if (filename.endsWith('.xlsx')) return 'Download Excel Sheet (.xlsx)';
+    if (filename.endsWith('.md')) return 'Download Markdown (.md)';
+    return 'Download Result PDF';
   };
 
   const mainContent = (
@@ -177,7 +185,6 @@ export default function ToolRunnerModal({ tool, inline = false, onClose, onPrevi
             <span>{progress}%</span>
           </div>
 
-          {/* Animated Fill Bar */}
           <div style={{ width: '100%', height: '10px', background: 'var(--bg-input)', borderRadius: '10px', overflow: 'hidden' }}>
             <motion.div
               initial={{ width: 0 }}
@@ -205,7 +212,7 @@ export default function ToolRunnerModal({ tool, inline = false, onClose, onPrevi
       {/* Error Banner */}
       {errorMessage && (
         <div style={{ marginTop: '20px', padding: '14px 18px', background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: 'var(--radius-md)', color: '#f87171', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.88rem' }}>
-          <AlertCircle size={20} flexShrink={0} />
+          <AlertCircle size={20} style={{ flexShrink: 0 }} />
           <span>{errorMessage}</span>
         </div>
       )}
@@ -219,12 +226,14 @@ export default function ToolRunnerModal({ tool, inline = false, onClose, onPrevi
 
           {result.type === 'single_file' && (
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-              <a href={result.downloadUrl} download className="browse-btn" style={{ padding: '8px 16px', fontSize: '0.85rem', textDecoration: 'none' }}>
-                <Download size={15} /> Download Result PDF
+              <a href={result.downloadUrl} download={result.pdfFileName} className="browse-btn" style={{ padding: '8px 16px', fontSize: '0.85rem', textDecoration: 'none' }}>
+                <Download size={15} /> {getDownloadLabel(result.pdfFileName)}
               </a>
-              <button onClick={() => onPreview({ previewUrl: result.previewUrl, pdfFileName: result.pdfFileName })} className="secondary-btn" style={{ padding: '8px 16px', fontSize: '0.85rem' }}>
-                <Eye size={15} /> Live Preview
-              </button>
+              {result.pdfFileName?.endsWith('.pdf') && (
+                <button onClick={() => onPreview({ previewUrl: result.previewUrl, pdfFileName: result.pdfFileName })} className="secondary-btn" style={{ padding: '8px 16px', fontSize: '0.85rem' }}>
+                  <Eye size={15} /> Live Preview
+                </button>
+              )}
             </div>
           )}
 
@@ -235,7 +244,7 @@ export default function ToolRunnerModal({ tool, inline = false, onClose, onPrevi
                 {result.files.map((f, i) => (
                   <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-tertiary)', padding: '8px 14px', borderRadius: '6px' }}>
                     <span style={{ fontSize: '0.85rem', fontWeight: '600' }}>{f.filename}</span>
-                    <a href={f.downloadUrl} download className="icon-btn download" style={{ width: '30px', height: '30px' }}>
+                    <a href={f.downloadUrl} download={f.filename} className="icon-btn download" style={{ width: '30px', height: '30px' }}>
                       <Download size={14} />
                     </a>
                   </div>
@@ -273,7 +282,6 @@ export default function ToolRunnerModal({ tool, inline = false, onClose, onPrevi
             </div>
           </div>
 
-          {/* Redesigned Premium Circular Close Button */}
           <motion.button 
             whileHover={{ scale: 1.1, rotate: 90 }}
             whileTap={{ scale: 0.9 }}
@@ -287,7 +295,7 @@ export default function ToolRunnerModal({ tool, inline = false, onClose, onPrevi
               color: 'var(--text-main)',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
+              justify: 'center',
               cursor: 'pointer',
               boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
             }}

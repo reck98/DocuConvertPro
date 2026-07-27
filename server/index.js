@@ -146,7 +146,16 @@ app.post('/api/tools/:action', upload.array('files', 20), async (req, res, next)
   const inputPaths = uploadedFiles.map(f => f.path);
   const primaryInput = inputPaths[0] || null;
 
-  const outputFileName = `studio_${action}_${uuidv4().substring(0, 8)}.pdf`;
+  // Extension Mapping per Action
+  const extMap = {
+    'pdf_to_word': '.docx',
+    'pdf_to_ppt': '.pptx',
+    'pdf_to_excel': '.xlsx',
+    'to_markdown': '.md',
+    'pdf_to_jpg': '.jpg'
+  };
+  const ext = extMap[action] || '.pdf';
+  const outputFileName = `studio_${action}_${uuidv4().substring(0, 8)}${ext}`;
   const outputPath = path.join(OUTPUTS_DIR, outputFileName);
 
   const payload = {
@@ -236,7 +245,7 @@ app.post('/api/workflow/execute', upload.array('files', 20), async (req, res, ne
   }
 });
 
-// 7. Download Output File
+// 7. Download Output File with Robust Extension Matching
 app.get('/api/download/:filename', (req, res) => {
   const filename = req.params.filename;
   const filePath = path.join(OUTPUTS_DIR, filename);
@@ -244,6 +253,15 @@ app.get('/api/download/:filename', (req, res) => {
   if (fs.existsSync(filePath)) {
     res.download(filePath, filename);
   } else {
+    // Fallback matching by base name if extension differs
+    const baseName = path.basename(filename, path.extname(filename));
+    if (fs.existsSync(OUTPUTS_DIR)) {
+      const files = fs.readdirSync(OUTPUTS_DIR);
+      const matched = files.find(f => f.startsWith(baseName));
+      if (matched) {
+        return res.download(path.join(OUTPUTS_DIR, matched), matched);
+      }
+    }
     res.status(404).json({ error: 'Requested file not found or expired.' });
   }
 });
@@ -258,6 +276,15 @@ app.get('/api/preview/:filename', (req, res) => {
     res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
     fs.createReadStream(filePath).pipe(res);
   } else {
+    // Fallback matching by base name
+    const baseName = path.basename(filename, path.extname(filename));
+    if (fs.existsSync(OUTPUTS_DIR)) {
+      const files = fs.readdirSync(OUTPUTS_DIR);
+      const matched = files.find(f => f.startsWith(baseName));
+      if (matched) {
+        return fs.createReadStream(path.join(OUTPUTS_DIR, matched)).pipe(res);
+      }
+    }
     res.status(404).send('PDF file not found');
   }
 });
