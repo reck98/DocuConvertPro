@@ -28,7 +28,7 @@ def pdf_to_word(input_path, output_path):
         if page_idx > 0:
             docx_doc.add_page_break()
         text = page.get_text("text")
-        if text.trim():
+        if text.strip():
             docx_doc.add_paragraph(text)
         else:
             # Render page image if scanned
