@@ -95,7 +95,9 @@ export default function App() {
   const navigateToSlug = (slug) => {
     setCurrentSlug(slug);
     window.history.pushState(null, '', slug ? `/${slug}` : '/');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (!slug) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const currentLandingTool = TOOLS.find(t => t.slug === currentSlug);
@@ -162,9 +164,15 @@ export default function App() {
   };
 
   const scrollToTools = () => {
-    if (toolsSectionRef.current) {
-      toolsSectionRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (currentSlug) {
+      navigateToSlug('');
     }
+    setSelectedCategory('all');
+    setTimeout(() => {
+      if (toolsSectionRef.current) {
+        toolsSectionRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 50);
   };
 
   return (
@@ -175,9 +183,12 @@ export default function App() {
         onNavigate={(cat) => {
           if (cat === 'workflow') {
             navigateToSlug('workflow-builder');
-          } else {
+          } else if (cat === 'ai') {
             navigateToSlug('');
-            setSelectedCategory(cat);
+            setSelectedCategory('ai');
+            scrollToTools();
+          } else {
+            scrollToTools();
           }
         }} 
       />
@@ -356,8 +367,7 @@ export default function App() {
         if (cat === 'workflow') {
           navigateToSlug('workflow-builder');
         } else {
-          navigateToSlug('');
-          setSelectedCategory(cat);
+          scrollToTools();
         }
       }} />
 
