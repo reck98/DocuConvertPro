@@ -1,0 +1,18 @@
+{
+  "name": "DocuConvert Pro — 34-in-1 Open Source PDF Studio Suite",
+  "short_name": "DocuConvert Pro",
+  "description": "All-in-one privacy-focused PDF processing platform featuring 34 PDF tools, visual workflow automation, OCR, and AI PDF intelligence.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#121614",
+  "theme_color": "#8b2635",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📄</text></svg>",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

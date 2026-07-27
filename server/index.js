@@ -3,15 +3,22 @@ const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { execFile, exec } = require('child_process');
-const archiver = require('archiver');
+const { execFile } = require('child_process');
 const { v4: uuidv4 } = require('uuid');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 const HOST = '0.0.0.0';
+const BASE_URL = 'https://docuconvertpro.onrender.com';
 
-// Enable CORS & JSON parsing
+// Security Headers & CORS
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
+
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
@@ -65,7 +72,7 @@ function runToolDispatcher(action, payloadData) {
   });
 }
 
-// 1. Lightweight Healthcheck Endpoint (For Docker / Cloud Run / Northflank)
+// 1. Lightweight Healthcheck Endpoint (For Docker / Cloud Run / Northflank / Render)
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'ok',
@@ -75,19 +82,56 @@ app.get('/health', (req, res) => {
   });
 });
 
-// 2. Engine Health & Registered Tools Status
+// 2. Technical SEO: Robots.txt Endpoint
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain');
+  res.send(`User-agent: *\nAllow: /\n\nSitemap: ${BASE_URL}/sitemap.xml`);
+});
+
+// 3. Technical SEO: Dynamic Sitemap.xml Endpoint
+app.get('/sitemap.xml', (req, res) => {
+  const toolSlugs = [
+    'merge-pdf', 'split-pdf', 'remove-pages', 'extract-pages', 'organize-pdf', 'scan-to-pdf',
+    'compress-pdf', 'repair-pdf', 'ocr-pdf',
+    'jpg-to-pdf', 'word-to-pdf', 'ppt-to-pdf', 'excel-to-pdf', 'html-to-pdf',
+    'pdf-to-jpg', 'pdf-to-word', 'pdf-to-powerpoint', 'pdf-to-excel', 'pdf-to-pdfa',
+    'rotate-pdf', 'add-page-numbers', 'add-watermark', 'crop-pdf', 'edit-pdf-text', 'pdf-forms',
+    'unlock-pdf', 'protect-pdf', 'sign-pdf', 'redact-pdf', 'compare-pdf',
+    'ai-summary', 'translate-pdf', 'pdf-to-markdown', 'workflow-builder'
+  ];
+
+  const lastmod = new Date().toISOString().split('T')[0];
+
+  let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+  xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
+  
+  // Homepage
+  xml += `  <url>\n    <loc>${BASE_URL}/</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>1.0</priority>\n  </url>\n`;
+
+  // Tool pages
+  toolSlugs.forEach(slug => {
+    xml += `  <url>\n    <loc>${BASE_URL}/${slug}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
+  });
+
+  xml += `</urlset>`;
+
+  res.type('application/xml');
+  res.send(xml);
+});
+
+// 4. Engine Health & Registered Tools Status
 app.get('/api/engine-status', (req, res) => {
   res.json({
     available: true,
-    engine: 'DocuConvert PDF Studio Full House (27 Tools)',
+    engine: 'DocuConvert PDF Studio Full House (34 Tools)',
     os: process.platform,
     categoriesCount: 8,
-    totalTools: 27,
-    details: 'All PDF processing tools and Workflow Automation active.'
+    totalTools: 34,
+    details: 'All 34 PDF processing tools and Workflow Automation active.'
   });
 });
 
-// 3. Generic Tool Dispatcher Endpoint for all 27 PDF Tools
+// 5. Generic Tool Dispatcher Endpoint for all 34 PDF Tools
 app.post('/api/tools/:action', upload.array('files', 20), async (req, res) => {
   const action = req.params.action;
   let params = {};
@@ -150,7 +194,7 @@ app.post('/api/tools/:action', upload.array('files', 20), async (req, res) => {
   }
 });
 
-// 4. Workflow Automation Endpoint
+// 6. Workflow Automation Endpoint
 app.post('/api/workflow/execute', upload.array('files', 20), async (req, res) => {
   const uploadedFiles = req.files || [];
   const inputPaths = uploadedFiles.map(f => f.path);
@@ -192,7 +236,7 @@ app.post('/api/workflow/execute', upload.array('files', 20), async (req, res) =>
   }
 });
 
-// 5. Download Output File
+// 7. Download Output File
 app.get('/api/download/:filename', (req, res) => {
   const filename = req.params.filename;
   const filePath = path.join(OUTPUTS_DIR, filename);
@@ -204,7 +248,7 @@ app.get('/api/download/:filename', (req, res) => {
   }
 });
 
-// 6. Preview PDF File
+// 8. Preview PDF File
 app.get('/api/preview/:filename', (req, res) => {
   const filename = req.params.filename;
   const filePath = path.join(OUTPUTS_DIR, filename);
@@ -218,10 +262,10 @@ app.get('/api/preview/:filename', (req, res) => {
   }
 });
 
-// Serve production static assets
+// Serve production static assets with Caching & History API Fallback
 const CLIENT_BUILD = path.join(__dirname, '../client/dist');
 if (fs.existsSync(CLIENT_BUILD)) {
-  app.use(express.static(CLIENT_BUILD));
+  app.use(express.static(CLIENT_BUILD, { maxAge: '1d' }));
   app.get('*', (req, res) => {
     res.sendFile(path.join(CLIENT_BUILD, 'index.html'));
   });
@@ -239,7 +283,7 @@ server.on('error', (err) => {
   }
 });
 
-// Graceful Shutdown Handler for SIGTERM & SIGINT (Container platforms e.g. Northflank, Cloud Run)
+// Graceful Shutdown Handler for SIGTERM & SIGINT
 const gracefulShutdown = (signal) => {
   console.log(`Received ${signal}. Shutting down gracefully...`);
   server.close(() => {
