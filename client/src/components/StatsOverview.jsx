@@ -1,58 +1,37 @@
 import React from 'react';
-import { FileCheck, Files, Clock, ShieldCheck } from 'lucide-react';
+import { Layers, FileCode, Sparkles, ScanText } from 'lucide-react';
+import { motion } from 'framer-motion';
 
-export default function StatsOverview({ files }) {
-  const totalFiles = files.length;
-  const completedFiles = files.filter(f => f.status === 'completed').length;
-  const convertingFiles = files.filter(f => f.status === 'converting').length;
-  
-  const avgDuration = files
-    .filter(f => f.durationMs)
-    .reduce((acc, curr, idx, arr) => acc + curr.durationMs / arr.length, 0);
+export default function StatsOverview() {
+  const stats = [
+    { label: 'PDF Tools', val: '34 Tools', icon: Layers, color: '#6366f1' },
+    { label: 'File Formats', val: '10+ Formats', icon: FileCode, color: '#06b6d4' },
+    { label: 'AI Intelligence', val: 'AI Powered', icon: Sparkles, color: '#d946ef' },
+    { label: 'Text Recognition', val: 'OCR Ready', icon: ScanText, color: '#10b981' }
+  ];
 
   return (
-    <div className="stats-grid">
-      <div className="stat-card">
-        <div className="stat-icon" style={{ background: 'rgba(99, 102, 241, 0.15)', color: '#818cf8' }}>
-          <Files size={24} />
-        </div>
-        <div>
-          <div className="stat-val">{totalFiles}</div>
-          <div className="stat-lbl">Total Documents</div>
-        </div>
-      </div>
-
-      <div className="stat-card">
-        <div className="stat-icon" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#34d399' }}>
-          <FileCheck size={24} />
-        </div>
-        <div>
-          <div className="stat-val">{completedFiles}</div>
-          <div className="stat-lbl">Converted PDFs</div>
-        </div>
-      </div>
-
-      <div className="stat-card">
-        <div className="stat-icon" style={{ background: 'rgba(6, 182, 212, 0.15)', color: '#22d3ee' }}>
-          <Clock size={24} />
-        </div>
-        <div>
-          <div className="stat-val">
-            {avgDuration ? `${(avgDuration / 1000).toFixed(1)}s` : '0.0s'}
-          </div>
-          <div className="stat-lbl">Avg Conversion Speed</div>
-        </div>
-      </div>
-
-      <div className="stat-card">
-        <div className="stat-icon" style={{ background: 'rgba(217, 70, 239, 0.15)', color: '#e879f9' }}>
-          <ShieldCheck size={24} />
-        </div>
-        <div>
-          <div className="stat-val">100%</div>
-          <div className="stat-lbl">Parsed Accuracy</div>
-        </div>
-      </div>
+    <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '32px' }}>
+      {stats.map((st, idx) => {
+        const IconComp = st.icon;
+        return (
+          <motion.div
+            key={st.label}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: idx * 0.05 }}
+            className="stat-card"
+          >
+            <div className="stat-icon" style={{ background: `${st.color}15`, color: st.color }}>
+              <IconComp size={22} />
+            </div>
+            <div>
+              <div className="stat-val">{st.val}</div>
+              <div className="stat-lbl">{st.label}</div>
+            </div>
+          </motion.div>
+        );
+      })}
     </div>
   );
 }
