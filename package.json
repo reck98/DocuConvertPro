@@ -1,0 +1,19 @@
+{
+  "name": "word-to-pdf-converter",
+  "version": "1.0.0",
+  "description": "Enterprise-grade Word (.docx) to PDF Converter with Dashboard",
+  "main": "server/index.js",
+  "scripts": {
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
+    "start": "node server/index.js",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && node index.js",
+    "client": "cd client && npm run dev"
+  },
+  "keywords": ["word", "docx", "pdf", "converter", "dashboard"],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
